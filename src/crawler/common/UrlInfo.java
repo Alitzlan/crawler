@@ -1,5 +1,9 @@
 package crawler.common;
 
-public class UrlInfo {
+import java.util.Date;
 
+public class UrlInfo {
+	public String url;
+	public Date timestamp;
+	public Integer priority;
 }
