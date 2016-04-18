@@ -2,8 +2,13 @@ package crawler.common;
 
 import java.net.InetSocketAddress;
 
+/*
+ * Common information of a node
+ * Created by Chi
+ */
+
 public class NodeInfo {
-	public Short id;
-	public String hostname;
-	public InetSocketAddress addr; //ipaddr + port
+    public short id;
+    public String hostname;
+    public InetSocketAddress addr; //ipaddr + port
 }
