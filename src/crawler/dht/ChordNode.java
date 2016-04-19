@@ -13,7 +13,7 @@ import java.util.Hashtable;
  */
 
 public class ChordNode extends ChordPeer {
-    private class Finger extends NodeInfo {
+    private class Finger extends ChordPeer {
         int start;
         IntRange range;
     }
@@ -25,17 +25,26 @@ public class ChordNode extends ChordPeer {
 
     }
 
+    @Override
     public ChordPeer find_successor() {
         return null;
     }
 
+    @Override
     public ChordPeer find_predecessor() {
+        ChordPeer pred = this;
+        IntRange testrange;
+        testrange = new IntRange(this.id, id, Chord.MAX_NUM_OF_NODE);
+        
         return null;
     }
 
+    @Override
     public ChordPeer closest_preceding_finger(int id) {
+        IntRange testrange = new IntRange(this.id, id, Chord.MAX_NUM_OF_NODE);
         for (int i = Chord.FINGER_TABLE_SIZE - 1; i >= 0; i--) {
-            continue;
+            if(testrange.containOpenOpen(finger_table[i].id))
+                return finger_table[i];
         }
         return this;
     }

@@ -6,6 +6,6 @@ package crawler.dht;
  */
 
 public class Chord {
-    public static final int MAX_NUM_OF_PEER = 8;
+    public static final int MAX_NUM_OF_NODE = 8;
     public static final int FINGER_TABLE_SIZE = 3;
 }

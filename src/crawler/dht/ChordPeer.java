@@ -12,4 +12,16 @@ public class ChordPeer extends NodeInfo {
     public UrlInfo lookUp(int key) {
         return null;
     }
+
+    public ChordPeer find_successor() {
+        return null;
+    }
+
+    public ChordPeer find_predecessor() {
+        return null;
+    }
+
+    public ChordPeer closest_preceding_finger(int id) {
+        return this;
+    }
 }
