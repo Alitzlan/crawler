@@ -11,7 +11,7 @@ public class ChordMsg {
     private static Gson gson = new Gson();
 
     public enum MsgType {
-        NOTIFY, LOOKUP
+        NOTIFY, LOOKUP, RPC
     }
 
     public MsgType type;
