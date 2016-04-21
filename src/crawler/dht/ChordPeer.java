@@ -8,20 +8,20 @@ import crawler.common.UrlInfo;
  * Created by Chi
  */
 
-public class ChordPeer extends NodeInfo {
-    public UrlInfo lookUp(int key) {
+public class ChordPeer extends NodeInfo implements ChordRPC {
+
+    @Override
+    public ChordPeer find_successor(int id) {
         return null;
     }
 
-    public ChordPeer find_successor() {
+    @Override
+    public ChordPeer find_predecessor(int id) {
         return null;
     }
 
-    public ChordPeer find_predecessor() {
-        return null;
-    }
-
+    @Override
     public ChordPeer closest_preceding_finger(int id) {
-        return this;
+        return null;
     }
 }

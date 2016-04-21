@@ -7,7 +7,7 @@ import com.google.gson.Gson;
  * Created by Chi
  */
 
-public class ChordMsg {
+public class ChordMsg{
     private static Gson gson = new Gson();
 
     public enum MsgType {
