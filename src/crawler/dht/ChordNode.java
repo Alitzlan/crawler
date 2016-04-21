@@ -12,8 +12,8 @@ import java.util.Hashtable;
  * Created by Chi
  */
 
-public class ChordNode extends ChordPeer {
-    private class Finger extends ChordPeer {
+public class ChordNode extends NodeInfo implements ChordRPC {
+    private class Finger extends ChordNode {
         int start;
         IntRange range;
     }
@@ -25,28 +25,43 @@ public class ChordNode extends ChordPeer {
 
     }
 
-    @Override
-    public ChordPeer find_successor() {
-        return null;
+    public ChordNode find_successor(int id) {
+        ChordNode pred_for_id = find_predecessor(id);
+        return pred_for_id.finger_table[0];
     }
 
-    @Override
-    public ChordPeer find_predecessor() {
-        ChordPeer pred = this;
-        IntRange testrange;
-        testrange = new IntRange(this.id, id, Chord.MAX_NUM_OF_NODE);
-        
-        return null;
+    public ChordNode find_predecessor(int id) {
+        ChordNode pred_for_id = this;
+        IntRange test_range;
+        for (test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].id);
+             !test_range.containOpenClose(id);
+             test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].id))
+            pred_for_id = pred_for_id.closest_preceding_finger(id);
+        return pred_for_id;
     }
 
-    @Override
-    public ChordPeer closest_preceding_finger(int id) {
+    public ChordNode closest_preceding_finger(int id) {
         IntRange testrange = new IntRange(this.id, id, Chord.MAX_NUM_OF_NODE);
-        for (int i = Chord.FINGER_TABLE_SIZE - 1; i >= 0; i--) {
-            if(testrange.containOpenOpen(finger_table[i].id))
+        for (int i = Chord.FINGER_TABLE_SIZE - 1; i >= 0; i--)
+            if (testrange.containOpenOpen(finger_table[i].id))
                 return finger_table[i];
-        }
         return this;
+    }
+
+    public void join(ChordNode n) {
+
+    }
+
+    public void init_finger_table(ChordNode n) {
+
+    }
+
+    public void update_others() {
+
+    }
+    
+    public void update_finger_table(ChordNode s, int i) {
+
     }
 
     public void printFingerTable() {

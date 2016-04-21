@@ -13,7 +13,9 @@ public class Client {
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             Hello stub = (Hello) registry.lookup("Hello");
-            String response = stub.sayHello().content;
+            Registry reg = stub.getNext();
+            Hello stub2 = (Hello) registry.lookup("Hello");
+            String response = stub2.sayHello().content;
             System.out.println("response: " + response);
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
