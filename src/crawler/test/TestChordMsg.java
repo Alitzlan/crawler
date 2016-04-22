@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /*
- * The test main function for Chord message
+ * The test main function for ChordPolicy message
  * Created by Chi
  */
 

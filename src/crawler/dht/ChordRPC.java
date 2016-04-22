@@ -5,7 +5,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /*
- * Remote procedure calls for Chord
+ * Remote procedure calls for ChordPolicy
  * Created by Chi
  */
 

@@ -12,7 +12,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 
-import static crawler.dht.Chord.FINGER_TABLE_SIZE;
+import static crawler.dht.ChordPolicy.FINGER_TABLE_SIZE;
 
 /*
  * The object that provides node rpc functions
@@ -56,7 +56,7 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     }
 
     public ChordNode closest_preceding_finger(int id) {
-        IntRange testrange = new IntRange(this.id, id, Chord.MAX_NUM_OF_NODE);
+        IntRange testrange = new IntRange(this.id, id, ChordPolicy.MAX_NUM_OF_NODE);
         for (int i = FINGER_TABLE_SIZE - 1; i >= 0; i--)
             if (testrange.containOpenOpen(finger_table[i].node.id))
                 return finger_table[i].node;
@@ -65,6 +65,8 @@ public class ChordNode extends NodeInfo implements ChordRPC {
 
     public void join(ChordNode n) throws RemoteException, NotBoundException {
         try {
+            if(n == null)
+                throw new java.rmi.ConnectException("Null node info");
             Registry registry = LocateRegistry.getRegistry(n.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
             init_finger_table(n);
@@ -125,11 +127,13 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     public static void main(String args[]) {
 
         try {
-            ChordNode obj = new ChordNode();
-            ChordNode stub = (ChordNode) UnicastRemoteObject.exportObject(obj, 0);
+            ChordNode node = new ChordNode();
+            ChordNode stub = (ChordNode) UnicastRemoteObject.exportObject(node, 0);
 
             Registry registry = LocateRegistry.getRegistry();
             registry.bind("ChordNode", stub);
+
+            node.join(null);
 
             System.err.println("Server ready");
         } catch (Exception e) {
