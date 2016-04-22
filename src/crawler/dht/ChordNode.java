@@ -30,12 +30,17 @@ public class ChordNode extends NodeInfo implements ChordRPC {
         ChordNode node;
     }
 
-    private Finger[] finger_table = new Finger[FINGER_TABLE_SIZE];
+    private Finger[] finger_table;
     private Hashtable<String, UrlInfo> hashtable;
     private ChordNode predecessor;
+    public static Logger logger;
 
     public ChordNode() {
-
+        logger = LoggerFactory.getLogger(ChordNode.class);
+        logger.info("Node Created");
+        finger_table = new Finger[FINGER_TABLE_SIZE];
+        for(int i = 0;i < FINGER_TABLE_SIZE;i++)
+            finger_table[i] = new Finger();
     }
 
     public ChordNode find_successor(int id) throws RemoteException, NotBoundException {
@@ -47,19 +52,18 @@ public class ChordNode extends NodeInfo implements ChordRPC {
         ChordNode pred_for_id = this;
         IntRange test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].node.id);
         while (!test_range.containOpenClose(id)) {
-            if(pred_for_id.id != this.id) { //RPC
+            if (pred_for_id.id != this.id) { //RPC
                 Registry registry = LocateRegistry.getRegistry(pred_for_id.addr.getHostName());
                 ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
                 pred_for_id = stub.closest_preceding_finger(id);
-            }
-            else
+            } else
                 pred_for_id = pred_for_id.closest_preceding_finger(id);
             test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].node.id);
         }
         return pred_for_id;
     }
 
-    public ChordNode closest_preceding_finger(int id) {
+    public ChordNode closest_preceding_finger(int id) throws RemoteException, NotBoundException {
         IntRange testrange = new IntRange(this.id, id, ChordPolicy.MAX_NUM_OF_NODE);
         for (int i = finger_table.length - 1; i >= 0; i--)
             if (testrange.containOpenOpen(finger_table[i].node.id))
@@ -69,19 +73,23 @@ public class ChordNode extends NodeInfo implements ChordRPC {
 
     public void join(ChordNode n) throws RemoteException, NotBoundException {
         try {
-            if(n == null)
+            if (n == null)
                 throw new java.rmi.ConnectException("Null node info");
+            logger.debug(String.format("Joining node %s", n.hostname));
             Registry registry = LocateRegistry.getRegistry(n.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
             init_finger_table(n);
             update_others();
             // TODO: move keys responsibility from successor
-        }
-        catch (java.rmi.ConnectException e) { //no other node exists
-            for(int i = 0; i < FINGER_TABLE_SIZE; i++)
+        } catch (java.rmi.ConnectException e) { //no other node exists
+            for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
+                finger_table[i].start = (this.id + (int) Math.pow(2, i))%MAX_NUM_OF_NODE;
+                finger_table[i].range = new IntRange((this.id + (int)Math.pow(2, i))%MAX_NUM_OF_NODE, (this.id + (int)Math.pow(2, i+1))%MAX_NUM_OF_NODE);
                 finger_table[i].node = this;
+            }
             predecessor = this;
         }
+        printFingerTable();
     }
 
     public void init_finger_table(ChordNode n) throws RemoteException, NotBoundException {
@@ -91,17 +99,17 @@ public class ChordNode extends NodeInfo implements ChordRPC {
         predecessor = finger_table[0].node.predecessor;
         finger_table[0].node.predecessor = this;
         IntRange testrange;
-        for(int i = 0; i < FINGER_TABLE_SIZE-1; i++) {
+        for (int i = 0; i < FINGER_TABLE_SIZE - 1; i++) {
             testrange = new IntRange(this.id, finger_table[i].node.id);
-            if(testrange.containCloseOpen(finger_table[i+1].start))
-                finger_table[i+1].node = finger_table[i].node;
+            if (testrange.containCloseOpen(finger_table[i + 1].start))
+                finger_table[i + 1].node = finger_table[i].node;
             else
-                finger_table[i+1].node = stub.find_successor(finger_table[i+1].start);
+                finger_table[i + 1].node = stub.find_successor(finger_table[i + 1].start);
         }
     }
 
     public void update_others() throws RemoteException, NotBoundException {
-        for(int i = 0; i < FINGER_TABLE_SIZE; i++) {
+        for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
             ChordNode p = find_predecessor(this.id - (int) Math.pow(2, i - 1));
             Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
@@ -111,32 +119,23 @@ public class ChordNode extends NodeInfo implements ChordRPC {
 
     public void update_finger_table(ChordNode s, int i) throws RemoteException, NotBoundException {
         IntRange testrange = new IntRange(this.id, finger_table[i].node.id);
-        if(testrange.containCloseOpen(s.id)) {
+        if (testrange.containCloseOpen(s.id)) {
             finger_table[i].node = s;
             ChordNode p = predecessor;
             Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
-            stub.update_finger_table(s,i);
-        }
-    }
-
-    public void printFingerTable() {
-        Logger logger = LoggerFactory.getLogger(ChordNode.class);
-        logger.info(String.format("start\tinterval\tsuccessor"));
-        for (Finger finger : finger_table) {
-            logger.info(String.format("%d\t[%d, %d)\t%d", finger.start, finger.range.getMin(), finger.range.getMax(), finger.node.id));
+            stub.update_finger_table(s, i);
         }
     }
 
     public UrlInfo lookup(String url) throws RemoteException, NotBoundException {
         String sha1 = DigestUtils.sha1Hex("www.google.com.hk");
         long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
-        int keyid = (int)(testlong%MAX_NUM_OF_NODE);
+        int keyid = (int) (testlong % MAX_NUM_OF_NODE);
         ChordNode node = find_successor(keyid);
-        if(node.id == this.id){
+        if (node.id == this.id) {
             return lookup_local(url);
-        }
-        else {
+        } else {
             Registry registry = LocateRegistry.getRegistry(node.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
             return stub.lookup_local(url);
@@ -144,7 +143,7 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     }
 
     public UrlInfo lookup_local(String url) throws RemoteException, NotBoundException {
-        if(hashtable.contains(url))
+        if (hashtable.contains(url))
             return hashtable.get(url);
         else
             return null;
@@ -153,12 +152,11 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     public boolean insert(String url) throws RemoteException, NotBoundException {
         String sha1 = DigestUtils.sha1Hex("www.google.com.hk");
         long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
-        int keyid = (int)(testlong%MAX_NUM_OF_NODE);
+        int keyid = (int) (testlong % MAX_NUM_OF_NODE);
         ChordNode node = find_successor(keyid);
-        if(node.id == this.id){
+        if (node.id == this.id) {
             return insert_local(url);
-        }
-        else {
+        } else {
             Registry registry = LocateRegistry.getRegistry(node.addr.getHostName());
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
             return stub.insert_local(url);
@@ -166,7 +164,7 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     }
 
     public boolean insert_local(String url) throws RemoteException, NotBoundException {
-        if(hashtable.contains(url))
+        if (hashtable.contains(url))
             return false;
         else {
             UrlInfo newurl = new UrlInfo(url);
@@ -175,20 +173,27 @@ public class ChordNode extends NodeInfo implements ChordRPC {
         }
     }
 
+    public void printFingerTable() {
+        logger.info(String.format("start\tinterval\tsuccessor"));
+        for (Finger finger : finger_table) {
+            logger.info(String.format("%d\t\t[%d, %d)\t\t%d", finger.start, finger.range.getMin(), finger.range.getMax(), finger.node.id));
+        }
+    }
+
     public static void main(String args[]) {
 
         try {
             ChordNode node = new ChordNode();
-            ChordNode stub = (ChordNode) UnicastRemoteObject.exportObject(node, 0);
+            ChordRPC stub = (ChordRPC) UnicastRemoteObject.exportObject(node, 0);
 
             Registry registry = LocateRegistry.getRegistry();
             registry.bind("ChordNode", stub);
 
             node.join(null);
 
-            System.err.println("Server ready");
+            logger.info("Server ready");
         } catch (Exception e) {
-            System.err.println("Server exception: " + e.toString());
+            logger.error("Server exception: " + e.toString());
             e.printStackTrace();
         }
     }
