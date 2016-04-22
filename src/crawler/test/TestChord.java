@@ -5,5 +5,8 @@ package crawler.test;
  * Created by Chi
  */
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 public class TestChord {
+
 }

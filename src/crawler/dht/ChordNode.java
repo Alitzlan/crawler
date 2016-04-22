@@ -2,6 +2,8 @@ package crawler.dht;
 
 import crawler.common.NodeInfo;
 import crawler.common.UrlInfo;
+import crawler.test.TestPolymophism.ParentClass;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 
 import static crawler.dht.ChordPolicy.FINGER_TABLE_SIZE;
+import static crawler.dht.ChordPolicy.MAX_NUM_OF_NODE;
+import static crawler.dht.ChordPolicy.SHA1_SUBSTR_BEGIN;
 
 /*
  * The object that provides node rpc functions
@@ -27,7 +31,7 @@ public class ChordNode extends NodeInfo implements ChordRPC {
     }
 
     private Finger[] finger_table = new Finger[FINGER_TABLE_SIZE];
-    private Hashtable<Integer, UrlInfo> hashtable;
+    private Hashtable<String, UrlInfo> hashtable;
     private ChordNode predecessor;
 
     public ChordNode() {
@@ -57,7 +61,7 @@ public class ChordNode extends NodeInfo implements ChordRPC {
 
     public ChordNode closest_preceding_finger(int id) {
         IntRange testrange = new IntRange(this.id, id, ChordPolicy.MAX_NUM_OF_NODE);
-        for (int i = FINGER_TABLE_SIZE - 1; i >= 0; i--)
+        for (int i = finger_table.length - 1; i >= 0; i--)
             if (testrange.containOpenOpen(finger_table[i].node.id))
                 return finger_table[i].node;
         return this;
@@ -121,6 +125,53 @@ public class ChordNode extends NodeInfo implements ChordRPC {
         logger.info(String.format("start\tinterval\tsuccessor"));
         for (Finger finger : finger_table) {
             logger.info(String.format("%d\t[%d, %d)\t%d", finger.start, finger.range.getMin(), finger.range.getMax(), finger.node.id));
+        }
+    }
+
+    public UrlInfo lookup(String url) throws RemoteException, NotBoundException {
+        String sha1 = DigestUtils.sha1Hex("www.google.com.hk");
+        long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
+        int keyid = (int)(testlong%MAX_NUM_OF_NODE);
+        ChordNode node = find_successor(keyid);
+        if(node.id == this.id){
+            return lookup_local(url);
+        }
+        else {
+            Registry registry = LocateRegistry.getRegistry(node.addr.getHostName());
+            ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
+            return stub.lookup_local(url);
+        }
+    }
+
+    public UrlInfo lookup_local(String url) throws RemoteException, NotBoundException {
+        if(hashtable.contains(url))
+            return hashtable.get(url);
+        else
+            return null;
+    }
+
+    public boolean insert(String url) throws RemoteException, NotBoundException {
+        String sha1 = DigestUtils.sha1Hex("www.google.com.hk");
+        long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
+        int keyid = (int)(testlong%MAX_NUM_OF_NODE);
+        ChordNode node = find_successor(keyid);
+        if(node.id == this.id){
+            return insert_local(url);
+        }
+        else {
+            Registry registry = LocateRegistry.getRegistry(node.addr.getHostName());
+            ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC");
+            return stub.insert_local(url);
+        }
+    }
+
+    public boolean insert_local(String url) throws RemoteException, NotBoundException {
+        if(hashtable.contains(url))
+            return false;
+        else {
+            UrlInfo newurl = new UrlInfo(url);
+            hashtable.put(url, newurl);
+            return true;
         }
     }
 
