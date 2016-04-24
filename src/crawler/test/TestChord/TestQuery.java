@@ -12,9 +12,11 @@ import java.rmi.registry.Registry;
  */
 public class TestQuery {
     public static void main(String[] args) throws RemoteException, NotBoundException {
-        Registry registry = LocateRegistry.getRegistry();
+        Registry registry = LocateRegistry.getRegistry(args[0]);
         ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC1024");
         System.out.println(stub.insert("www.google.com"));
         System.out.println(stub.insert("www.google.com"));
+        System.out.println(stub.insert("www.baidu.com"));
+        System.out.println(stub.insert("www.baidu.com"));
     }
 }
