@@ -1,5 +1,6 @@
 package crawler.common;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /*
@@ -7,7 +8,7 @@ import java.util.Date;
  * Created by Chi
  */
 
-public class UrlInfo {
+public class UrlInfo implements Serializable{
     public String url;
     public Date timestamp;
     public int priority;

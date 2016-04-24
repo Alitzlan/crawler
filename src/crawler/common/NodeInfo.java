@@ -1,5 +1,6 @@
 package crawler.common;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 
 /*
@@ -7,7 +8,7 @@ import java.net.InetSocketAddress;
  * Created by Chi
  */
 
-public class NodeInfo {
+public class NodeInfo implements Serializable {
     public short id;
     public String hostname;
     public InetSocketAddress addr; //ipaddr + port

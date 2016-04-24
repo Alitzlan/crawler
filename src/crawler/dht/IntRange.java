@@ -1,54 +1,64 @@
 package crawler.dht;
 
+import java.io.Serializable;
+
 /*
  * The class for range comparison
  * Created by Chi
  */
 
-public class IntRange {
-    private int min;
-    private int max;
-    private int mod;
+public class IntRange implements Serializable {
+    public int min;
+    public int max;
+    public int mod;
+    private boolean cyclic;
+    private IntRange first;
+    private IntRange second;
 
     public IntRange(int min, int max) {
         this.min = min;
         this.max = max;
-        this.mod = 0;
+        cyclic = false;
     }
 
     public IntRange(int min, int max, int mod) {
-        this.min = min;
         this.mod = mod;
+        this.max = max%mod;
+        this.min = min%mod;
         if (max > min)
-            this.max = max;
-        else
-            this.max = max + mod;
-    }
-
-    public int getMin() {
-        return min;
-    }
-
-    public int getMax() {
-        if (max < mod)
-            return max;
-        else
-            return max - mod;
+            cyclic = false;
+        else {
+            cyclic = true;
+            first = new IntRange(min, mod);
+            second = new IntRange(0, max);
+        }
     }
 
     public boolean containCloseClose(int val) {
-        return val >= min && val <= max;
+        if (cyclic) {
+            return first.containCloseOpen(val%mod) || second.containCloseClose(val%mod);
+        } else
+            return val >= min && val <= max;
     }
 
     public boolean containCloseOpen(int val) {
-        return val >= min && val < max;
+        if (cyclic) {
+            return first.containCloseOpen(val%mod) || second.containCloseOpen(val%mod);
+        } else
+            return val >= min && val < max;
     }
 
     public boolean containOpenClose(int val) {
-        return val > min && val <= max;
+        if (cyclic) {
+            return first.containOpenOpen(val%mod) || second.containCloseClose(val%mod);
+        } else
+            return val > min && val <= max;
     }
 
     public boolean containOpenOpen(int val) {
-        return val > min && val < max;
+        if (cyclic) {
+            return first.containOpenOpen(val%mod) || second.containCloseOpen(val%mod);
+        } else
+            return val > min && val < max;
     }
 }
