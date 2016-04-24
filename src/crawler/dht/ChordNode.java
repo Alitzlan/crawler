@@ -229,6 +229,7 @@ public class ChordNode implements ChordRPC {
         String sha1 = DigestUtils.sha1Hex(url);
         long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
         int keyid = (int) (testlong % MAX_NUM_OF_NODE);
+        logger.info("Hashkey " + keyid);
         ChordNodeInfo node = find_successor(keyid);
         if (node.id == myinfo.id) {
             return insert_local(url);
