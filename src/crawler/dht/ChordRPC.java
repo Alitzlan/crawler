@@ -14,6 +14,7 @@ import java.rmi.RemoteException;
 public interface ChordRPC extends Remote{
     public ChordNodeInfo find_successor(int id) throws RemoteException, NotBoundException;
     public ChordNodeInfo find_predecessor(int id) throws RemoteException, NotBoundException;
+    public ChordNodeInfo find_predecessor_close(int id) throws RemoteException, NotBoundException;
     public ChordNodeInfo closest_preceding_finger(int id) throws RemoteException, NotBoundException;
 
     public void init_finger_table(ChordNodeInfo n) throws RemoteException, NotBoundException;
