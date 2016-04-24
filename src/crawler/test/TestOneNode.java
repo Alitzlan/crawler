@@ -18,7 +18,7 @@ public class TestOneNode {
             ChordRPC stub = (ChordRPC) UnicastRemoteObject.exportObject(node, 1024);
 
             Registry registry = LocateRegistry.getRegistry();
-            registry.bind("ChordNode", stub);
+            registry.bind("ChordRPC", stub);
 
             node.join(null);
 
