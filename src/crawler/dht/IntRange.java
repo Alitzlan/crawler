@@ -18,6 +18,7 @@ public class IntRange {
 
     public IntRange(int min, int max, int mod) {
         this.min = min;
+        this.mod = mod;
         if (max > min)
             this.max = max;
         else
