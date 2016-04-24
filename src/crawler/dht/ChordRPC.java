@@ -1,6 +1,5 @@
 package crawler.dht;
 
-import crawler.common.NodeInfo;
 import crawler.common.UrlInfo;
 
 import java.rmi.NotBoundException;
@@ -25,4 +24,7 @@ public interface ChordRPC extends Remote{
     public UrlInfo lookup_local(String url) throws RemoteException, NotBoundException;
     public boolean insert(String url) throws RemoteException, NotBoundException;
     public boolean insert_local(String url) throws RemoteException, NotBoundException;
+
+    public void set_predecessor(ChordNodeInfo n) throws RemoteException;
+    public ChordNodeInfo get_info() throws RemoteException;
 }

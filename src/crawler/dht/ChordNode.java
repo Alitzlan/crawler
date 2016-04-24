@@ -77,10 +77,18 @@ public class ChordNode implements ChordRPC {
                 Registry registry = LocateRegistry.getRegistry(pred_for_id.addr.getHostName());
                 ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC"+pred_for_id.addr.getPort());
                 pred_for_id = stub.closest_preceding_finger(id);
-            } else
+            } else {
                 pred_for_id = closest_preceding_finger(id);
+                if (pred_for_id.id != myinfo.id) {
+                    Registry registry = LocateRegistry.getRegistry(pred_for_id.addr.getHostName());
+                    ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC" + pred_for_id.addr.getPort());
+                    pred_for_id = stub.get_info();
+                }
+            }
             test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].node.id, MAX_NUM_OF_NODE);
         }
+        if(id == pred_for_id.finger_table[0].node.id)
+            pred_for_id = pred_for_id.finger_table[0].node;
         return pred_for_id;
     }
 
@@ -116,15 +124,19 @@ public class ChordNode implements ChordRPC {
     }
 
     public void init_finger_table(ChordNodeInfo n) throws RemoteException, NotBoundException {
+        System.out.println("init_finger_table");
         Registry registry = LocateRegistry.getRegistry(n.addr.getHostName());
         ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC"+n.addr.getPort());
         for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
             myinfo.finger_table[i].start = (myinfo.id + (int) Math.pow(2, i))%MAX_NUM_OF_NODE;
             myinfo.finger_table[i].range = new IntRange((myinfo.id + (int)Math.pow(2, i))%MAX_NUM_OF_NODE, (myinfo.id + (int)Math.pow(2, i+1))%MAX_NUM_OF_NODE, MAX_NUM_OF_NODE);
         }
-        myinfo.finger_table[0].node = stub.find_predecessor(myinfo.finger_table[0].start);
+        myinfo.finger_table[0].node = stub.find_successor(myinfo.finger_table[0].start);
         myinfo.predecessor = myinfo.finger_table[0].node.predecessor;
         myinfo.finger_table[0].node.predecessor = myinfo;
+        Registry registry2 = LocateRegistry.getRegistry(myinfo.finger_table[0].node.addr.getHostName());
+        ChordRPC stub2 = (ChordRPC) registry.lookup("ChordRPC"+myinfo.finger_table[0].node.addr.getPort());
+        stub2.set_predecessor(myinfo);
         IntRange testrange;
         for (int i = 0; i < FINGER_TABLE_SIZE - 1; i++) {
             testrange = new IntRange(myinfo.id, myinfo.finger_table[i].node.id, MAX_NUM_OF_NODE);
@@ -139,26 +151,34 @@ public class ChordNode implements ChordRPC {
     }
 
     public void update_others() throws RemoteException, NotBoundException {
+        System.out.println("update_others");
         for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
-            short predid = (short) Math.pow(2, i - 1);
+            short predid = (short)(myinfo.id - Math.pow(2, i));
             if(predid < 0) predid += MAX_NUM_OF_NODE;
+            System.out.println(predid);
             ChordNodeInfo p = find_predecessor(predid);
-            Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
-            ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC"+p.addr.getPort());
-            stub.update_finger_table(myinfo, i);
+            if(p.id != myinfo.id) {
+                Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
+                ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC" + p.addr.getPort());
+                stub.update_finger_table(myinfo, i);
+            }
         }
         printFingerTable();
     }
 
     public void update_finger_table(ChordNodeInfo s, int i) throws RemoteException, NotBoundException {
+        System.out.println("update_finger_table");
         IntRange testrange = new IntRange(myinfo.id, myinfo.finger_table[i].node.id, MAX_NUM_OF_NODE);
         if (testrange.containCloseOpen(s.id)) {
             myinfo.finger_table[i].node = s;
             ChordNodeInfo p = myinfo.predecessor;
-            Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
-            ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC"+p.addr.getPort());
-            stub.update_finger_table(s, i);
+            if(p.id != s.id) {
+                Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
+                ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC" + p.addr.getPort());
+                stub.update_finger_table(s, i);
+            }
         }
+        printFingerTable();
     }
 
     public UrlInfo lookup(String url) throws RemoteException, NotBoundException {
@@ -205,6 +225,14 @@ public class ChordNode implements ChordRPC {
             hashtable.put(url, newurl);
             return true;
         }
+    }
+
+    public void set_predecessor(ChordNodeInfo n) throws RemoteException {
+        myinfo.predecessor = n;
+    }
+
+    public ChordNodeInfo get_info() throws RemoteException {
+        return myinfo;
     }
 
     public void printFingerTable() {
