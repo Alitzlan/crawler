@@ -150,7 +150,6 @@ public class ChordNode implements ChordRPC {
     }
 
     public void init_finger_table(ChordNodeInfo n) throws RemoteException, NotBoundException {
-        System.out.println("init_finger_table");
         Registry registry = LocateRegistry.getRegistry(n.addr.getHostName());
         ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC" + n.addr.getPort());
         for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
@@ -177,11 +176,9 @@ public class ChordNode implements ChordRPC {
     }
 
     public void update_others() throws RemoteException, NotBoundException {
-        System.out.println("update_others");
         for (int i = 0; i < FINGER_TABLE_SIZE; i++) {
             short predid = (short) (myinfo.id - Math.pow(2, i));
             if (predid < 0) predid += MAX_NUM_OF_NODE;
-            System.out.println(predid);
             ChordNodeInfo p = find_predecessor_close(predid);
             if (p.id != myinfo.id) {
                 Registry registry = LocateRegistry.getRegistry(p.addr.getHostName());
@@ -193,7 +190,6 @@ public class ChordNode implements ChordRPC {
     }
 
     public void update_finger_table(ChordNodeInfo s, int i) throws RemoteException, NotBoundException {
-        System.out.println("update_finger_table");
         IntRange testrange = new IntRange(myinfo.id, myinfo.finger_table[i].node.id, MAX_NUM_OF_NODE);
         if (testrange.containCloseOpen(s.id)) {
             myinfo.finger_table[i].node = s;
@@ -229,7 +225,7 @@ public class ChordNode implements ChordRPC {
     }
 
     public boolean insert(String url) throws RemoteException, NotBoundException {
-        logger.debug("Attempting insertion of " + url);
+        logger.info("Attempting insertion of " + url);
         String sha1 = DigestUtils.sha1Hex(url);
         long testlong = Long.parseUnsignedLong(sha1.substring(SHA1_SUBSTR_BEGIN), 16);
         int keyid = (int) (testlong % MAX_NUM_OF_NODE);
@@ -244,7 +240,7 @@ public class ChordNode implements ChordRPC {
     }
 
     public boolean insert_local(String url) throws RemoteException, NotBoundException {
-        logger.debug("Attempting local insertion of " + url);
+        logger.info("Attempting local insertion of " + url);
         if (hashtable.containsKey(url))
             return false;
         else {
