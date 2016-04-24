@@ -133,6 +133,7 @@ public class ChordNode implements ChordRPC {
             ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC"+n.addr.getPort());
             init_finger_table(n);
             update_others();
+            init_finger_table(n);
             // TODO: move keys responsibility (predecessor, self] from successor
         } catch (java.rmi.ConnectException e) { //no other node exists
             logger.warn("joining node is null or not up");
@@ -156,7 +157,8 @@ public class ChordNode implements ChordRPC {
             myinfo.finger_table[i].range = new IntRange((myinfo.id + (int)Math.pow(2, i))%MAX_NUM_OF_NODE, (myinfo.id + (int)Math.pow(2, i+1))%MAX_NUM_OF_NODE, MAX_NUM_OF_NODE);
         }
         myinfo.finger_table[0].node = stub.find_successor(myinfo.finger_table[0].start);
-        myinfo.predecessor = myinfo.finger_table[0].node.predecessor;
+        if(myinfo.finger_table[0].node.predecessor.id != myinfo.id)
+            myinfo.predecessor = myinfo.finger_table[0].node.predecessor;
         myinfo.finger_table[0].node.predecessor = myinfo;
         Registry registry2 = LocateRegistry.getRegistry(myinfo.finger_table[0].node.addr.getHostName());
         ChordRPC stub2 = (ChordRPC) registry.lookup("ChordRPC"+myinfo.finger_table[0].node.addr.getPort());
@@ -264,6 +266,7 @@ public class ChordNode implements ChordRPC {
         for (ChordFinger finger : myinfo.finger_table) {
             logger.info(String.format("%d\t\t[%d, %d)\t\t%d", finger.start, finger.range.min, finger.range.max, finger.node.id));
         }
+        logger.info("pred: " + myinfo.predecessor.id);
     }
 
     public void printHashTable() {
