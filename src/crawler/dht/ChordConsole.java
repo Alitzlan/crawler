@@ -35,13 +35,13 @@ public class ChordConsole {
         while(true) {
             System.out.print("cmd> ");
             cmd = reader.nextLine();
-            if(stub == null) {
-                System.out.println("Please sethost first!");
-                continue;
-            }
             if(cmd.length() == 0)
                 continue;
             String[] splitcmd = cmd.split(" ");
+            if(stub == null && splitcmd[0] != "sethost") {
+                System.out.println("Please sethost first!");
+                continue;
+            }
             switch(splitcmd[0]) {
                 case "sethost":
                     uri = new URI("rpc://"+splitcmd[1]);
