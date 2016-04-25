@@ -38,7 +38,7 @@ public class ChordConsole {
             if(cmd.length() == 0)
                 continue;
             String[] splitcmd = cmd.split(" ");
-            if(stub == null && splitcmd[0] != "sethost") {
+            if(stub == null && !splitcmd[0].equals("sethost")) {
                 System.out.println("Please sethost first!");
                 continue;
             }
