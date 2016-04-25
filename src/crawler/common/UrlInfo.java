@@ -14,6 +14,11 @@ public class UrlInfo implements Serializable {
     public int priority;                    // static category priority for pure FIFO implementation of concurrent queue
     public int dynamicPriority;             // dynamic priority calculated from URL for skiplist concurrent priority quque implementation
 
+    public UrlInfo(String url) {
+        this.url = url;
+        this.timestamp = new Date();
+    }
+
     public UrlInfo(String url, int priority, int dynamicPriority) {
         this.url = url;
         this.timestamp = new Date();

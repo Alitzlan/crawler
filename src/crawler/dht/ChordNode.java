@@ -146,7 +146,6 @@ public class ChordNode implements ChordRPC {
             myinfo.predecessor = myinfo;
             myinfo.predecessor = myinfo;
         }
-        printFingerTable();
     }
 
     public void init_finger_table(ChordNodeInfo n) throws RemoteException, NotBoundException {
@@ -172,7 +171,6 @@ public class ChordNode implements ChordRPC {
                 myinfo.finger_table[i + 1].node = stub.find_successor(myinfo.finger_table[i + 1].start);
             }
         }
-        printFingerTable();
     }
 
     public void update_others() throws RemoteException, NotBoundException {
@@ -186,7 +184,6 @@ public class ChordNode implements ChordRPC {
                 stub.update_finger_table(myinfo, i);
             }
         }
-        printFingerTable();
     }
 
     public void update_finger_table(ChordNodeInfo s, int i) throws RemoteException, NotBoundException {
@@ -200,7 +197,6 @@ public class ChordNode implements ChordRPC {
                 stub.update_finger_table(s, i);
             }
         }
-        printFingerTable();
     }
 
     public UrlInfo lookup(String url) throws RemoteException, NotBoundException {
@@ -259,7 +255,7 @@ public class ChordNode implements ChordRPC {
         return myinfo;
     }
 
-    public void printFingerTable() {
+    public void printFingerTable() throws RemoteException {
         logger.info(String.format("start\tinterval\tsuccessor"));
         for (ChordFinger finger : myinfo.finger_table) {
             logger.info(String.format("%d\t\t[%d, %d)\t\t%d", finger.start, finger.range.min, finger.range.max, finger.node.id));
@@ -267,7 +263,7 @@ public class ChordNode implements ChordRPC {
         logger.info("pred: " + myinfo.predecessor.id);
     }
 
-    public void printHashTable() {
+    public void printHashTable() throws RemoteException {
         logger.info(String.format("local hashtable"));
         for (Map.Entry<String, UrlInfo> entry : hashtable.entrySet()) {
             logger.info(String.format("%s\t%s", entry.getKey(), entry.getValue().timestamp.toString()));

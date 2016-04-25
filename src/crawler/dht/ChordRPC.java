@@ -26,6 +26,9 @@ public interface ChordRPC extends Remote{
     public boolean insert(String url) throws RemoteException, NotBoundException;
     public boolean insert_local(String url) throws RemoteException, NotBoundException;
 
+    public void printFingerTable() throws RemoteException;
+    public void printHashTable() throws RemoteException;
+
     public void set_predecessor(ChordNodeInfo n) throws RemoteException;
     public ChordNodeInfo get_info() throws RemoteException;
 }
