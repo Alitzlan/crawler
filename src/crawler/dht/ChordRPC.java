@@ -21,10 +21,15 @@ public interface ChordRPC extends Remote{
     public void update_others() throws RemoteException, NotBoundException;
     public void update_finger_table(ChordNodeInfo s, int i) throws RemoteException, NotBoundException;
 
+    public void transfer_hash_table(ChordNodeInfo n, int start) throws RemoteException, NotBoundException;
+
     public UrlInfo lookup(String url) throws RemoteException, NotBoundException;
     public UrlInfo lookup_local(String url) throws RemoteException, NotBoundException;
     public boolean insert(String url) throws RemoteException, NotBoundException;
     public boolean insert_local(String url) throws RemoteException, NotBoundException;
+
+    public void printFingerTable() throws RemoteException;
+    public void printHashTable() throws RemoteException;
 
     public void set_predecessor(ChordNodeInfo n) throws RemoteException;
     public ChordNodeInfo get_info() throws RemoteException;
