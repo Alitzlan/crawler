@@ -1,6 +1,7 @@
 import scrapy
 import logging
 import pymssql
+import os
 
 from scrapy.http import Request
 
@@ -41,13 +42,15 @@ class redditSpider(scrapy.Spider):
 
 
     def parseThread(self, response):
-        #cs505DistributedCrawler#01
         logging.info("Parsing thread url: %s" % response.url)
 
-        # sql connection
-        server = "purduesigbots.com:2009"
-        user = "cs505_user"
-        password = "cs505DistributedCrawler#01"
+        # sql connection load server & credentials
+        credentialFile = open(("%s/../credentials.txt" % os.path.dirname(os.path.realpath(__file__))), 'r')
+        server = credentialFile.readline().strip()
+        user = credentialFile.readline().strip()
+        password = credentialFile.readline().strip()
+        credentialFile.close()
+
         conn = pymssql.connect(server,user,password,"cs505")
         cursor = conn.cursor()
 
