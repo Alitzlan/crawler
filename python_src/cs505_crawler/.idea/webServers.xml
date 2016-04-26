@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="1aabf4b5-13d2-4dec-a33f-dc6be48daadb" name="ubuntu 14.04 lts VM" url="http://192.168.223.132">
+        <fileTransfer host="192.168.223.132" port="22" accessType="SFTP" password="dfe2dfdfdfd8dfcbdfc9dfcbdfc4df8edf8fdf93df92df9d" username="javid">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="15ea01db-48c8-447b-acd2-b2f162e2cbbe" name="ubuntu 16.04 lts VM" url="http://192.168.223.133">
+        <fileTransfer host="192.168.223.133" port="22" accessType="SFTP" password="dfe2dfdfdfd8dfcbdfc9dfcbdfc4df8edf8fdf93df92df9d" username="javid">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
