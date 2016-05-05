@@ -78,8 +78,19 @@ public class Client {
                     case KNOWN_LEADER: {
                         // clear the list of election candidates
                         list.clear();
-
-                        // CRAWL!!!
+                        /*********************************************************************************
+                         *
+                         * If node is in this state then the leader is known and it can start crawling.
+                         * Steps that should occur next:
+                         *  1) start up DHT node
+                         *  2) join DHT 1st node is the leader
+                         *  3) run DHT node
+                         *  4) query queue at leader for next URL
+                         *  5) crawl URL
+                         *  6) add url to DHT
+                         *  7) goto 3
+                         *
+                         ********************************************************************************/
                         break;
                     }
                     case ELECTION: {
@@ -119,7 +130,17 @@ public class Client {
                         break;
                     }
                     case LEADER:{
-                        // Run the non-blocking queue and you are the 1st DHT node
+                        /*********************************************************************************
+                         *
+                         * If node is in this state then it is the first node and is the leader/master
+                         * Steps that should occur next:
+                         *  1) start up non-blocking quque
+                         *  2) start up first DHT node
+                         *  3) run non-blocking queue
+                         *  4) run DHT node
+                         *  7) goto 3
+                         *
+                         ********************************************************************************/
                         break;
                     }
                     default:
