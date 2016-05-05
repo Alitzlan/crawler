@@ -2,6 +2,7 @@ import scrapy
 import logging
 import pymssql
 import os
+import re
 
 from scrapy.http import Request
 
@@ -9,7 +10,7 @@ class redditSpider(scrapy.Spider):
     name = "reddit"
     allowed_domains = ["www.reddit.com"]
     start_urls = [
-        "http://www.reddit.com/r/programming"
+        "https://www.reddit.com/r/askprogramming"
     ]
     logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class redditSpider(scrapy.Spider):
 
     def parseSubReddit(self, response):
         logging.info("Parsing url: %s" % response.url)
+
         div_list = response.xpath('//div[@id="siteTable"]/div[contains(@class, "thing")]')
         title_list = response.xpath('//div[@class="entry unvoted"]/p[@class="title"]/a/text()').extract()
         url_list = response.xpath('//div[@class="entry unvoted"]/ul/li[@class="first"]/a/@href').extract()
@@ -44,6 +46,8 @@ class redditSpider(scrapy.Spider):
     def parseThread(self, response):
         logging.info("Parsing thread url: %s" % response.url)
 
+        subreddit = re.search('\/r\/([a-z]|[A-Z]|[0-9])+', response.url).group(0)
+
         # sql connection load server & credentials
         credentialFile = open(("%s/../credentials.txt" % os.path.dirname(os.path.realpath(__file__))), 'r')
         server = credentialFile.readline().strip()
@@ -58,6 +62,7 @@ class redditSpider(scrapy.Spider):
         author = response.xpath('//div[@id="siteTable"]/div/@data-author').extract()[0]
 
         # insert author into database
+        logging.debug("INSERTING AUTHOR: %s" % author)
         cursor.callproc('insert_author', (str(author), 0))
         conn.commit()
 
@@ -66,15 +71,16 @@ class redditSpider(scrapy.Spider):
         rank = len(listOfComments) - 1              # subtract 1 due to the fact that the original post sames the same div id value
 
         # update users rank in database
+        logging.debug("UPDATING AUTHOR: %s RANK: %d" % (author, rank))
         cursor.callproc('update_rank', (str(author), rank))
         conn.commit()
 
         # get the usernames of all people who commented on this thread
         listOfCommenters = response.xpath('//a[contains(@class, "author may-blank")]/text()').extract()
         for user in listOfCommenters:
-            #print("Author: %s\t Com: %s" % (author, user))
+            logging.debug("Author: %s\t Com: %s" % (author, user))
             if author != user:
-                cursor.callproc('insert_relationship', (author, user))
+                cursor.callproc('insert_relationship', (author, user, subreddit))
                 conn.commit()
 
         conn.close()
