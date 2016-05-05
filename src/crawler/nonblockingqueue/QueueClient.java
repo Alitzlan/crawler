@@ -35,8 +35,9 @@ public class QueueClient {
 		return null;
 	}
 	
-	public boolean enqueue(QueueUrl qu){
+	public boolean enqueue(String url){
 		try{
+		QueueUrl = new QueueUrl(url,"enqueue");
 		Socket s = new Socket(host,port);
 		ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 		oos.writeObject(qu);
@@ -50,7 +51,7 @@ public class QueueClient {
 	
 	public static void main(String[] args){
 		QueueClient q = new QueueClient();
-		q.enqueue(new QueueUrl("https://www.reddit.com/user/ani625","enqueue"));
+		q.enqueue("https://www.reddit.com/user/ani625","enqueue");
 		QueueUrl output = q.dequeue();
 		if(output!=null)
 			System.out.println(output.getUrl());

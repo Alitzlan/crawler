@@ -1,5 +1,7 @@
 package crawler.leader;
 
+import crawler.dht.ChordNode;
+import crawler.dht.ChordNodeInfo;
 import crawler.main.Config;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Created by javid on 5/3/16.
@@ -91,6 +94,15 @@ public class Client {
                          *  7) goto 3
                          *
                          ********************************************************************************/
+                        ChordNode normalChord = new ChordNode((short)config.getId(),1024);
+                        normalChord.join(new ChordNodeInfo(leader));
+                        QueueClient queueClient = new QueueClient();
+                        while(true){
+                        //crawler start to crawl new url,please finish it
+                        String url = null;
+                        if(normalChord.insert(url))//return true when url not exist in the dht.
+                        	queueClient.enqueue(url);
+                        }
                         break;
                     }
                     case ELECTION: {
@@ -141,7 +153,9 @@ public class Client {
                          *  7) goto 3
                          *
                          ********************************************************************************/
-                    	//QueueServer.start();
+                    	ChordNode leaderChord = new ChordNode(); 
+                    	leaderChord.join(null);
+                    	QueueServer.start();
                         break;
                     }
                     default:
