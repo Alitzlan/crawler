@@ -22,11 +22,18 @@ public class ChordNodeInfo extends NodeInfo implements Serializable{
     }
 
     public ChordNodeInfo(String socketaddr) throws URISyntaxException {
-        URI uri = new URI("rpc://"+socketaddr);
+        URI uri = new URI(String.format("rpc://%s",socketaddr));
         hostname = uri.getHost();
         int port = uri.getPort();
         if (port<0)
             port = 1024;
         addr = new InetSocketAddress(hostname, port);
+    }
+	
+	public ChordNodeInfo(String hostname, int port) {
+        if (port<0)
+            port = 1024;
+        
+		addr = new InetSocketAddress(hostname, port);
     }
 }

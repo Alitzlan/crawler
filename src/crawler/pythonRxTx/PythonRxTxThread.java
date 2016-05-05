@@ -1,5 +1,6 @@
 package crawler.pythonRxTx;
 
+import crawler.nonblockingqueue.QueueUrl;
 import crawler.dht.ChordNode;
 import crawler.leader.Client;
 import crawler.main.Config;
@@ -41,22 +42,16 @@ public class PythonRxTxThread implements Runnable {
             sock = new DatagramSocket(config.getRxPythonPort());
 
             //upon first starting start at /r/programming and go from there
-            if(chordNode.lookup("https://www.reddit.com/r/programming") == null){
-                nextCrawl = "https://www.reddit.com/r/programming";
+            if(chordNode.insert("https://www.reddit.com/user/detailsguy")){
+                nextCrawl = "https://www.reddit.com/user/detailsguy";
                 sendData = nextCrawl.getBytes();
-            }
-            else{   // we have already crawled that url grab one from the queue to start
-                nextCrawl = qc.dequeue().getUrl();
-                sendData = nextCrawl.getBytes();
-            }
 
-            // add url to DHT
-            chordNode.insert(nextCrawl);
-
-            // send initial url to python to crawl
-            sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName("localhost"), config.getTxPythonPort());
-            sock.send(sendPacket);
-            logger.info("Sent " + nextCrawl + " to crawl");
+                // send initial url to python to crawl
+                InetAddress sendTo = InetAddress.getByName(InetAddress.getLocalHost().getHostName());
+                sendPacket = new DatagramPacket(sendData, sendData.length, sendTo, config.getTxPythonPort());
+                sock.send(sendPacket);
+                logger.info("Sent " + nextCrawl + " to crawl on " + InetAddress.getLocalHost().getHostName() + ":" + config.getTxPythonPort());
+            }
 
             while (true) {
                 if (Client.currState == Client.state.KNOWN_LEADER) {
@@ -66,13 +61,14 @@ public class PythonRxTxThread implements Runnable {
                     // get url from python crawler
                     sock.receive(receivePacket);
                     data = new String(receivePacket.getData());
+                    logger.info("Received url from crawler " + data);
 
                     try{
                         // try to create url object out of data
                         url = new URL(data);
 
                         // if it works then we have a url from the crawler
-                        if(chordNode.lookup(data) == null){
+                        if(chordNode.insert(data)){
                             logger.info("Adding URL: " + data + " to frontier queue");
                             qc.enqueue(data);
                         }
@@ -81,9 +77,16 @@ public class PythonRxTxThread implements Runnable {
                         }
                     }
                     catch(MalformedURLException e){
-                        // this was not a ulr but an ACK from crawler. Feed it the next URL
-                        nextCrawl = qc.dequeue().getUrl();
-                        sendData = nextCrawl.getBytes();
+                        // this was not a url but an ACK from crawler. Feed it the next URL
+                        int i = 0;
+						logger.info("received ack: " + data);
+                        QueueUrl next;
+                        while((next = qc.dequeue()) == null){
+                            System.out.print(i++ + " ");
+							Thread.sleep(1000);
+						}
+						nextCrawl = next.getUrl();
+						sendData = nextCrawl.getBytes();
 
                         // add url to DHT
                         chordNode.insert(nextCrawl);
@@ -101,7 +104,9 @@ public class PythonRxTxThread implements Runnable {
             e.printStackTrace();
         } catch (NotBoundException e) {
             e.printStackTrace();
-        }
+        } catch (InterruptedException e){
+			e.printStackTrace();
+		}
 
     }
 }

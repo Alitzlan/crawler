@@ -34,8 +34,8 @@ public class QueueServer implements Runnable {
         }
     }
 
-    public static void start() throws Exception {
-        ServerSocket ssock = new ServerSocket(2002);
+    public static void start(int port) throws Exception {
+        ServerSocket ssock = new ServerSocket(port);
         //LockFreeQueue<QueueUrl> q = new LockFreeQueue<QueueUrl>();
         StaticConcurrentPriorityQueue queue = new StaticConcurrentPriorityQueue();
         System.out.println("Server is Listening");

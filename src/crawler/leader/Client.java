@@ -11,9 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.*;
+import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.*;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Lock;
@@ -53,6 +57,8 @@ public class Client {
 
         // DHT variables
         ChordNode chordNode = null;
+		Registry registry;
+		ChordRPC stub;
 
         // concurrent queue client variables
         QueueClient qc = null;
@@ -117,11 +123,18 @@ public class Client {
                         // queue client, DHT node, and python interaction threads to begin crawl
                         if(chordNode == null && qc == null){
                             chordNode = new ChordNode((short)config.getId(),config.getDhtPort());
-                            chordNode.join(new ChordNodeInfo(leader + ":" + config.getDhtPort()));
+							stub = (ChordRPC) UnicastRemoteObject.exportObject(chordNode, 0);
+							
+							// handle RMI registry stuff
+							registry = LocateRegistry.getRegistry();
+							registry.rebind("ChordRPC" + chordNode.myinfo.addr.getPort(), stub);
+							
+							// join chord network
+	                        chordNode.join(new ChordNodeInfo(leader, config.getDhtPort()));
 
                             // Chi something needs to updated here as Chord keeps failing
 
-                            qc = new QueueClient(config.getHostname(), config.getQueuePort());
+                            qc = new QueueClient(leader, config.getQueuePort());
                             rxtx = new PythonRxTxThread(qc, chordNode, config);
 
                             // start communication with python crawler
@@ -179,15 +192,31 @@ public class Client {
                          ********************************************************************************/
                         // on the first iteration startup DHT and queue processes
                         if(chordNode == null && qs == null){
-                            chordNode = new ChordNode((short)config.getId(),config.getDhtPort());
-                            chordNode.join(new ChordNodeInfo(leader + ":" + config.getDhtPort()));
-
+							chordNode = new ChordNode((short)config.getId(),config.getDhtPort());
+							stub = (ChordRPC) UnicastRemoteObject.exportObject(chordNode, 0);
+							
+							// handle RMI registry stuff
+							registry = LocateRegistry.getRegistry();
+							registry.rebind("ChordRPC" + chordNode.myinfo.addr.getPort(), stub);
+							
+							// join chord network as master node
+                            chordNode.join(null);
+                            logger.info("I am here chord created");
                             // Chi something needs to updated here as Chord keeps failing
 
-                            qs = new QueueServer(config.getQueuePort());
-                            queueServerThread = new Thread(qs);
-                            queueServerThread.start();
+                            (new Thread(){
+								public void run() {
+									try{
+										QueueServer.start(config.getQueuePort());
+									} catch (Exception e){
+										e.printStackTrace();
+										System.exit(1);
+									}
+								}
+							}).start();
+                            logger.info("queue server started");
                         }
+                        //logger.info("I am leader");
                         break;
                     }
                     default:
@@ -206,8 +235,6 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
             e.printStackTrace();
         } catch (NotBoundException e) {
             e.printStackTrace();
