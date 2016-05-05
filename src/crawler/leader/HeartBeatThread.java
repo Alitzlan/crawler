@@ -45,7 +45,7 @@ public class HeartBeatThread implements Runnable{
                         try {
                             receivePacket = new DatagramPacket(receiveData, receiveData.length);
                             hbSocket.receive(receivePacket);
-                            logger.info("Received heartbeat from: " + receivePacket.getAddress());
+                            //logger.debug("Received heartbeat from: " + receivePacket.getAddress());
 
                             sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), receivePacket.getAddress(), config.getHeartBeatPort());
                             hbSocket.send(sendPacket);

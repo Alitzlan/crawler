@@ -1,61 +1,67 @@
 package crawler.nonblockingqueue;
+
 import java.io.*;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class QueueClient {
-	private String host;
-	private int port;
-	
-	QueueClient(String host, int port){
-		this.host = host;
-		this.port = port;
-	}
-	
-	QueueClient(){
-		this.host = "localhost";
-		this.port = 2002;
-	}
-	
-	public QueueUrl dequeue(){
-		try{
-			Socket s = new Socket(host,port);
-			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-			QueueUrl qu = new QueueUrl("","dequeue");
-			oos.writeObject(qu);
-			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-			QueueUrl result = (QueueUrl) ois.readObject();
-			
-			oos.close();
-			ois.close();
-			s.close();
-			return result;
-			}catch(Exception e){System.out.println(e);}
-		return null;
-	}
-	
-	public boolean enqueue(String url){
-		try{
-		QueueUrl = new QueueUrl(url,"enqueue");
-		Socket s = new Socket(host,port);
-		ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-		oos.writeObject(qu);
-		ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-		String result = (String) ois.readObject();
-		System.out.println(result);
-		return result.equals("OK");
-		}catch(Exception e){System.out.println(e);}
-		return false;
-	}
-	
-	public static void main(String[] args){
-		QueueClient q = new QueueClient();
-		q.enqueue("https://www.reddit.com/user/ani625","enqueue");
-		QueueUrl output = q.dequeue();
-		if(output!=null)
-			System.out.println(output.getUrl());
-		
+    private String host;
+    private int port;
+
+    public QueueClient(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public QueueClient() {
+        this.host = "localhost";
+        this.port = 2002;
+    }
+
+    public QueueUrl dequeue() {
+        try {
+            Socket s = new Socket(host, port);
+            ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+            QueueUrl qu = new QueueUrl("", "dequeue");
+            oos.writeObject(qu);
+            ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+            QueueUrl result = (QueueUrl) ois.readObject();
+
+            oos.close();
+            ois.close();
+            s.close();
+            return result;
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    public boolean enqueue(String url) {
+        try {
+            QueueUrl qu = new QueueUrl(url, "enqueue");
+            Socket s = new Socket(host, port);
+            ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+            oos.writeObject(qu);
+            ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+            String result = (String) ois.readObject();
+            System.out.println(result);
+            return result.equals("OK");
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        return false;
+    }
+
+    public static void main(String[] args) {
+        QueueClient q = new QueueClient();
+        q.enqueue("https://www.reddit.com/user/ani625");
+        QueueUrl output = q.dequeue();
+        if (output != null)
+            System.out.println(output.getUrl());
+
 		/*Scanner s = new Scanner(System.in);
 		while(true){
 			System.out.println("please input command: ");
@@ -80,6 +86,6 @@ public class QueueClient {
 				System.out.println("unknown command!");;
 			}
 		}*/
-		
-	}
+
+    }
 }

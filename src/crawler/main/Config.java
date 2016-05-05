@@ -12,7 +12,8 @@ public class Config {
     private int dhtPort;
     private int leadershipPort;
     private int heartBeatPort;
-    private int pythonPort;
+    private int txPythonPort;
+    private int rxPythonPort;
     private String hostname;
     private String peerList[];
 
@@ -26,7 +27,8 @@ public class Config {
         dhtPort = 5001;
         leadershipPort = 5002;
         heartBeatPort = 5003;
-        pythonPort = 5004;
+        txPythonPort = 5004;
+        rxPythonPort = 5005;
     }
     public void setId(int id) { this.id = id; }
 
@@ -52,8 +54,12 @@ public class Config {
         return heartBeatPort;
     }
 
-    public int getPythonPort() {
-        return pythonPort;
+    public int getTxPythonPort() {
+        return txPythonPort;
+    }
+
+    public int getRxPythonPort() {
+        return rxPythonPort;
     }
 
     public String[] getPeerList() {

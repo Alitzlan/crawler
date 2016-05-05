@@ -39,7 +39,7 @@ public class Main{
             }
             config = new Config(nodeID, peerList.toArray(new String[peerList.size()]));
             client = new Client(config);
-            client.RunLeadershipElection();
+            client.RunNode();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

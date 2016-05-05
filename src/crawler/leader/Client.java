@@ -2,17 +2,23 @@ package crawler.leader;
 
 import crawler.dht.ChordNode;
 import crawler.dht.ChordNodeInfo;
+import crawler.dht.ChordRPC;
 import crawler.main.Config;
+import crawler.nonblockingqueue.QueueClient;
+import crawler.nonblockingqueue.QueueServer;
+import crawler.pythonRxTx.PythonRxTxThread;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.*;
+import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -21,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class Client {
     Logger logger = LoggerFactory.getLogger(Client.class);
     protected static final int time_quatum = 1000;
-    enum state {ELECTION_IN_PROGRESS,ELECTION,KNOWN_LEADER, LEADER}
+    public static enum state {ELECTION_IN_PROGRESS,ELECTION,KNOWN_LEADER, LEADER}
 
     public static state currState = state.ELECTION;
     public static Lock stateLock = new ReentrantLock();
@@ -35,14 +41,27 @@ public class Client {
         this.config = config;
     }
 
-    public void RunLeadershipElection(){
-        DatagramSocket sock;
-        DatagramSocket hbSock;
-        InetAddress ia;
-        String peer;
-        byte[] sendata;
-        String leader;
-        Queue<String> list = new ConcurrentLinkedDeque<>();
+    public void RunNode(){
+        // leadership variables
+        DatagramSocket sock;                                    // socket to communicate on for leadership election
+        DatagramSocket hbSock;                                  // heartbeat socket
+        InetAddress ia;                                         // internet address of peers
+        String peer;                                            // string representation of fqdm of peer to communicate with
+        byte[] sendata;                                         // data to send
+        String leader = "";                                     // fqdm of elected leader
+        Queue<String> list = new ConcurrentLinkedDeque<>();     // list of proposed leaders
+
+        // DHT variables
+        ChordNode chordNode = null;
+
+        // concurrent queue client variables
+        QueueClient qc = null;
+        PythonRxTxThread rxtx = null;
+
+        // concurrent queue server variables
+        QueueServer qs = null;
+        Thread queueServerThread = null;
+
 
         try {
             // open up the sockets for communication and configure them
@@ -94,14 +113,19 @@ public class Client {
                          *  7) goto 3
                          *
                          ********************************************************************************/
-                        ChordNode normalChord = new ChordNode((short)config.getId(),1024);
-                        normalChord.join(new ChordNodeInfo(leader));
-                        QueueClient queueClient = new QueueClient();
-                        while(true){
-                        //crawler start to crawl new url,please finish it
-                        String url = null;
-                        if(normalChord.insert(url))//return true when url not exist in the dht.
-                        	queueClient.enqueue(url);
+                        // this is the first iteration after an initial election I am not the leader so start up
+                        // queue client, DHT node, and python interaction threads to begin crawl
+                        if(chordNode == null && qc == null){
+                            chordNode = new ChordNode((short)config.getId(),config.getDhtPort());
+                            chordNode.join(new ChordNodeInfo(leader + ":" + config.getDhtPort()));
+
+                            // Chi something needs to updated here as Chord keeps failing
+
+                            qc = new QueueClient(config.getHostname(), config.getQueuePort());
+                            rxtx = new PythonRxTxThread(qc, chordNode, config);
+
+                            // start communication with python crawler
+                            new Thread(rxtx).start();
                         }
                         break;
                     }
@@ -141,7 +165,7 @@ public class Client {
                         }
                         break;
                     }
-                    case LEADER:{
+                    case LEADER: {
                         /*********************************************************************************
                          *
                          * If node is in this state then it is the first node and is the leader/master
@@ -153,15 +177,25 @@ public class Client {
                          *  7) goto 3
                          *
                          ********************************************************************************/
-                    	ChordNode leaderChord = new ChordNode(); 
-                    	leaderChord.join(null);
-                    	QueueServer.start();
+                        // on the first iteration startup DHT and queue processes
+                        if(chordNode == null && qs == null){
+                            chordNode = new ChordNode((short)config.getId(),config.getDhtPort());
+                            chordNode.join(new ChordNodeInfo(leader + ":" + config.getDhtPort()));
+
+                            // Chi something needs to updated here as Chord keeps failing
+
+                            qs = new QueueServer(config.getQueuePort());
+                            queueServerThread = new Thread(qs);
+                            queueServerThread.start();
+                        }
                         break;
                     }
                     default:
                         logger.error("I shouldn't be here" + currState.toString());
 
                 }
+                sync = (int)(Client.time_quatum - (System.currentTimeMillis() % Client.time_quatum));
+                Thread.sleep(sync);
             }
 
 
@@ -172,6 +206,10 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } catch (NotBoundException e) {
             e.printStackTrace();
         }
     }

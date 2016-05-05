@@ -12,3 +12,4 @@ if __name__ == '__main__':
                         level=logging.INFO)                                                     # set logging level to info
 
     cmdline.execute("scrapy crawl reddit".split())
+    #cmdline.execute(("scrapy crawl reddit -a start_url=%s" % "https://www.reddit.com/r/BeardedDragons").split())
