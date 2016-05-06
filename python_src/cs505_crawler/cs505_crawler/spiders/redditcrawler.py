@@ -18,12 +18,19 @@ def NextURL():
     ack = "::::"
 
     while True:
-        sock.sendto(ack.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        sock.sendto(ack.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         #print "waiting for data"
         nextURL, addr = sock.recvfrom(2048)
         nextURL = nextURL.decode()
         print ("Got data %s" % nextURL)
         yield nextURL
+
+def stripBytes(url):
+    ret = ""
+    for i in range(len(url)):
+        if url[i] != '\x00':
+            ret += url[i]
+    return ret
 
 class redditSpider(scrapy.Spider):
     name = "reddit"
@@ -45,16 +52,22 @@ class redditSpider(scrapy.Spider):
     def parse(self, response):
         logger.info("parse: parsing %s" % response.url)
 
-        if "comments" in response.url:
-            yield Request(url=response.url, callback=self.parseThread, dont_filter=True)
-        elif "user" in response.url:
-            yield Request(url=response.url, callback=self.parseUser, dont_filter=True)
-        else:
-            yield Request(url=response.url, callback=self.parseSubReddit, dont_filter=True)
+        try:
+            if "comments" in response.url:
+                yield Request(url=response.url, callback=self.parseThread, dont_filter=True)
+            elif "user" in response.url:
+                yield Request(url=response.url, callback=self.parseUser, dont_filter=True)
+            else:
+                yield Request(url=response.url, callback=self.parseSubReddit, dont_filter=True)
+        except:
+            sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
+            logger.info("parse: waiting ---")
+            nextURL, addr = sock.recvfrom(2048)
+            nextURL = nextURL.decode()
+            url = stripBytes(nextURL)
+            logger.info("parse: received %s" % url)
+            yield Request(url=url, callback=self.parse, dont_filter=True)
 
-        #nextUrl = self.url.next()
-        #logger.info("parse: nextURL %s" % nextUrl)
-        #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
 
     def parseSubReddit(self, response):
         global logger
@@ -67,10 +80,10 @@ class redditSpider(scrapy.Spider):
         url_list = response.xpath('//div[@class="entry unvoted"]/ul/li[@class="first"]/a/@href').extract()
 
         for index, div in enumerate(div_list):
-            logger.debug("%d: Title: %s Author: %s url: %s" % (index, title_list[index], div.xpath('@data-author').extract()[0], url_list[index]))
-            logger.info("Found url: %s" % url_list[index])
+            #logger.debug("%d: Title: %s Author: %s url: %s" % (index, title_list[index], div.xpath('@data-author').extract()[0], url_list[index]))
+            logger.debug("parseSubReddit: found: %s" % url_list[index])
             #yield Request(url=url_list[index], callback=self.parseThread)
-            sock.sendto(url_list[index].encode(), (socket.gethostname(), JAVA_PORT_TX))
+            sock.sendto(url_list[index].encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
         nextLink = response.xpath('//div[@class="nav-buttons"]/span[@class="nextprev"]/a/@href').extract()
         if len(nextLink) > 1:
@@ -78,20 +91,20 @@ class redditSpider(scrapy.Spider):
         else:
             nextLink = nextLink[0]
 
-        logger.info("Found next url: %s" % nextLink)
-        #yield Request(url=("%s" % nextLink), callback=self.parseSubReddit)
-        sock.sendto(nextLink.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        logger.debug("parseSubReddit: found: %s" % nextLink)
+        sock.sendto(nextLink.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
         #nextUrl = self.url.next()
         #logger.info("parseSubReddit: nextURL %s" % nextUrl)
         #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
 
-        sock.sendto(ACK.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseSubReddit: waiting ---")
         nextURL, addr = sock.recvfrom(2048)
         nextURL = nextURL.decode()
-        logger.info("parseSubReddit: received %s" % nextURL)
-        yield Request(url=nextURL, callback=self.parse, dont_filter=True)
+        url = stripBytes(nextURL)
+        logger.info("parseSubReddit: received %s" % url)
+        yield Request(url=url, callback=self.parse, dont_filter=True)
 
 
     def parseThread(self, response):
@@ -103,7 +116,8 @@ class redditSpider(scrapy.Spider):
         subredditURL = "https://www.reddit.com" + subreddit
 
         #yield Request(url=("%s" % subredditURL), callback=self.parseSubReddit)
-        sock.sendto(subredditURL.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        logger.debug("parseThread: found %s" % subredditURL)
+        sock.sendto(subredditURL.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
 
         # sql connection load server & credentials
@@ -122,7 +136,8 @@ class redditSpider(scrapy.Spider):
         authorUrl = authorResponse.xpath('@href').extract()[0]
 
         #yield Request(url=("%s" % authorUrl), callback=self.parseUser)
-        sock.sendto(authorUrl.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        logger.debug("parseThread: found %s" % authorUrl)
+        sock.sendto(authorUrl.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
         # insert author into database
         logger.debug("INSERTING AUTHOR: %s" % author)
@@ -153,33 +168,37 @@ class redditSpider(scrapy.Spider):
 
         for userURL in listOfUsersURL:
             #yield Request(url=("%s" % userURL), callback=self.parseUser)
-            sock.sendto(userURL.encode(), (socket.gethostname(), JAVA_PORT_TX))
+            logger.debug("parseThread: found %s" % userURL)
+            sock.sendto(userURL.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
         #nextUrl = self.url.next()
         #logger.info("parseThread: nextURL %s" % nextUrl)
         #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
-        sock.sendto(ACK.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseThread: waiting ---")
         nextURL, addr = sock.recvfrom(2048)
         nextURL = nextURL.decode()
-        logger.info("parseThread: received %s" % nextURL)
-        yield Request(url=nextURL, callback=self.parse, dont_filter=True)
+        url = stripBytes(nextURL)
+        logger.info("parseThread: received %s" % url)
+        yield Request(url=url, callback=self.parse, dont_filter=True)
 
     def parseUser(self, response):
         global logger
         global sock, JAVA_PORT_TX
         logger.info("Parsing user url: %s" % response.url)
-        commentedThreads = response.xpath('//a[contains(@class, "bylink may-blank")]').extract()
+        commentedThreads = response.xpath('//a[contains(@class, "bylink may-blank")]/@href').extract()
         for thread in commentedThreads:
             #yield Request(url=("%s" % thread), callback=self.parseThread)
-            sock.sendto(thread.encode(), (socket.gethostname(), JAVA_PORT_TX))
+            logger.debug("parseUser: found %s" % thread)
+            sock.sendto(thread.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
 
         #nextUrl = self.url.next()
         #logger.info("parseUser: nextURL %s" % nextUrl)
         #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
-        sock.sendto(ACK.encode(), (socket.gethostname(), JAVA_PORT_TX))
+        sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseUser: waiting ---")
         nextURL, addr = sock.recvfrom(2048)
         nextURL = nextURL.decode()
-        logger.info("parseUser: received %s" % nextURL)
-        yield Request(url=nextURL, callback=self.parse, dont_filter=True)
+        url = stripBytes(nextURL)
+        logger.info("parseUser: received %s" % url)
+        yield Request(url=url, callback=self.parse, dont_filter=True)
