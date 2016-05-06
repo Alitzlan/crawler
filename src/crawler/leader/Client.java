@@ -163,7 +163,6 @@ public class Client {
                         logger.info(String.format("Node %s is elected as a new leader", leader));
 
                         if(currState == state.ELECTION_IN_PROGRESS) {
-                            logger.info("updateing state");
                             stateLock.lock();
                             if (leader.compareTo(config.getHostname()) == 0) {
                                 currState = state.LEADER;
@@ -174,6 +173,7 @@ public class Client {
                                 hbThreadObject.setLeader(leader);
                             }
                             stateLock.unlock();
+                            logger.info("State updated: " + currState.toString());
                             list.clear();
                         }
                         break;

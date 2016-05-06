@@ -47,7 +47,7 @@ class redditSpider(scrapy.Spider):
         #self.start_urls = [kwargs.get('start_url')]
         sock.bind((socket.gethostname(), JAVA_PORT_RX))
         logger = logging.getLogger("scrapy")
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
 
     def parse(self, response):
         logger.info("parse: parsing %s" % response.url)
