@@ -54,7 +54,7 @@ public class PythonRxTxThread implements Runnable {
             }
 
             while (true) {
-                if (Client.currState == Client.state.KNOWN_LEADER) {
+                //if (Client.currState == Client.state.KNOWN_LEADER) {
                     receiveData = new byte[1024];
                     receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
@@ -96,7 +96,7 @@ public class PythonRxTxThread implements Runnable {
                         sock.send(sendPacket);
                         logger.info("Sent " + nextCrawl + " to crawl");
                     }
-                }
+                //}
             }
         } catch (SocketException e) {
             e.printStackTrace();

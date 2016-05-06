@@ -13,18 +13,6 @@ JAVA_PORT_RX = 5004
 JAVA_PORT_TX = 5005
 ACK = "::::"
 
-def NextURL():
-    global sock, JAVA_PORT_RX
-    ack = "::::"
-
-    while True:
-        sock.sendto(ack.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
-        #print "waiting for data"
-        nextURL, addr = sock.recvfrom(2048)
-        nextURL = nextURL.decode()
-        print ("Got data %s" % nextURL)
-        yield nextURL
-
 def stripBytes(url):
     ret = ""
     for i in range(len(url)):
@@ -35,7 +23,6 @@ def stripBytes(url):
 class redditSpider(scrapy.Spider):
     name = "reddit"
     allowed_domains = ["www.reddit.com"]
-    url = NextURL()
     start_urls = [
         "https://www.reddit.com/r/singapore"
     ]
@@ -46,6 +33,7 @@ class redditSpider(scrapy.Spider):
         super(redditSpider, self).__init__(*args, **kwargs)
         #self.start_urls = [kwargs.get('start_url')]
         sock.bind((socket.gethostname(), JAVA_PORT_RX))
+        sock.settimeout(2)
         logger = logging.getLogger("scrapy")
         logger.setLevel(logging.DEBUG)
 
@@ -62,7 +50,15 @@ class redditSpider(scrapy.Spider):
         except:
             sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
             logger.info("parse: waiting ---")
-            nextURL, addr = sock.recvfrom(2048)
+
+            nextURL = "-1"
+            while nextURL is "-1":
+                try:
+                    nextURL, addr = sock.recvfrom(2048)
+                except socket.timeout:
+                    sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
+                    logger.info("parse: waiting ---")
+
             nextURL = nextURL.decode()
             url = stripBytes(nextURL)
             logger.info("parse: received %s" % url)
@@ -100,7 +96,15 @@ class redditSpider(scrapy.Spider):
 
         sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseSubReddit: waiting ---")
-        nextURL, addr = sock.recvfrom(2048)
+
+        nextURL = "-1"
+        while nextURL is "-1":
+            try:
+                nextURL, addr = sock.recvfrom(2048)
+            except socket.timeout:
+                sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
+                logger.info("parseSubReddit: waiting ---")
+
         nextURL = nextURL.decode()
         url = stripBytes(nextURL)
         logger.info("parseSubReddit: received %s" % url)
@@ -176,7 +180,15 @@ class redditSpider(scrapy.Spider):
         #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
         sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseThread: waiting ---")
-        nextURL, addr = sock.recvfrom(2048)
+
+        nextURL = "-1"
+        while nextURL is "-1":
+            try:
+                nextURL, addr = sock.recvfrom(2048)
+            except socket.timeout:
+                sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
+                logger.info("parseThread: waiting ---")
+
         nextURL = nextURL.decode()
         url = stripBytes(nextURL)
         logger.info("parseThread: received %s" % url)
@@ -197,7 +209,15 @@ class redditSpider(scrapy.Spider):
         #yield Request(url=nextUrl, callback=self.parse, dont_filter=True)
         sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
         logger.info("parseUser: waiting ---")
-        nextURL, addr = sock.recvfrom(2048)
+
+        nextURL = "-1"
+        while nextURL is "-1":
+            try:
+                nextURL, addr = sock.recvfrom(2048)
+            except socket.timeout:
+                sock.sendto(ACK.encode("UTF-8"), (socket.gethostname(), JAVA_PORT_TX))
+                logger.info("parseUser: waiting ---")
+
         nextURL = nextURL.decode()
         url = stripBytes(nextURL)
         logger.info("parseUser: received %s" % url)
