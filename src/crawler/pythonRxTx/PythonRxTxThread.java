@@ -42,8 +42,8 @@ public class PythonRxTxThread implements Runnable {
             sock = new DatagramSocket(config.getRxPythonPort());
 
             //upon first starting start at /r/programming and go from there
-            if(chordNode.insert("https://www.reddit.com/user/detailsguy")){
-                nextCrawl = "https://www.reddit.com/user/detailsguy";
+            if(chordNode.insert("https://www.reddit.com/")){
+                nextCrawl = "https://www.reddit.com/";
                 sendData = nextCrawl.getBytes();
 
                 // send initial url to python to crawl
