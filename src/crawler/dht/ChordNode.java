@@ -89,6 +89,8 @@ public class ChordNode implements ChordRPC {
             }
             test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].node.id, MAX_NUM_OF_NODE);
         }
+        pred_for_id = renew_info(pred_for_id);
+        logger.debug("find_predecessor for " + id + ", result " + pred_for_id.id);
         return pred_for_id;
     }
 
@@ -112,9 +114,11 @@ public class ChordNode implements ChordRPC {
             }
             test_range = new IntRange(pred_for_id.id, pred_for_id.finger_table[0].node.id, MAX_NUM_OF_NODE);
         }
+        pred_for_id = renew_info(pred_for_id);
         if (id == pred_for_id.finger_table[0].node.id) {
             pred_for_id = pred_for_id.finger_table[0].node;
         }
+        logger.debug("find_predecessor_close for " + id + ", result " + pred_for_id.id);
         return pred_for_id;
     }
 
@@ -122,8 +126,11 @@ public class ChordNode implements ChordRPC {
         logger.debug("closest_preceding_finger for " + id);
         IntRange testrange = new IntRange(myinfo.id, id, MAX_NUM_OF_NODE);
         for (int i = myinfo.finger_table.length - 1; i >= 0; i--)
-            if (testrange.containOpenOpen(myinfo.finger_table[i].node.id))
+            if (testrange.containOpenOpen(myinfo.finger_table[i].node.id)) {
+                logger.debug("closest_preceding_finger for " + id + ", result " + myinfo.finger_table[i].node.id);
                 return myinfo.finger_table[i].node;
+            }
+        logger.debug("closest_preceding_finger for " + id + ", result " + myinfo.id);
         return myinfo;
     }
 
@@ -287,6 +294,12 @@ public class ChordNode implements ChordRPC {
 
     public void set_predecessor(ChordNodeInfo n) throws RemoteException {
         myinfo.predecessor = n;
+    }
+
+    public ChordNodeInfo renew_info(ChordNodeInfo n) throws RemoteException, NotBoundException {
+        Registry registry = LocateRegistry.getRegistry(n.addr.getHostName());
+        ChordRPC stub = (ChordRPC) registry.lookup("ChordRPC" + n.addr.getPort());
+        return stub.get_info();
     }
 
     public ChordNodeInfo get_info() throws RemoteException {
