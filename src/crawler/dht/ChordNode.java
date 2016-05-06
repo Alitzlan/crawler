@@ -27,8 +27,8 @@ import static crawler.dht.ChordPolicy.SHA1_SUBSTR_BEGIN;
 
 public class ChordNode implements ChordRPC {
 
-    private ChordNodeInfo myinfo;
-    private HashMap<String, UrlInfo> hashtable;
+    public ChordNodeInfo myinfo;
+    public HashMap<String, UrlInfo> hashtable;
     public static Logger logger;
 
     public ChordNode() throws RemoteException, UnknownHostException {
@@ -60,7 +60,7 @@ public class ChordNode implements ChordRPC {
         for (int i = 0; i < FINGER_TABLE_SIZE; i++)
             myinfo.finger_table[i] = new ChordFinger();
 
-        logger.info("Node Created");
+        logger.info(String.format("Node Created for host: %s on port %d", myinfo.hostname, port));
     }
 
     public ChordNodeInfo find_successor(int id) throws RemoteException, NotBoundException {
